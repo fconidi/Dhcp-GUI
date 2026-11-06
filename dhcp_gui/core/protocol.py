@@ -18,6 +18,7 @@ MAX_RESPONSE_BYTES = 1024 * 1024
 OPERATIONS = {
     "ping": "none",
     "inventory": "none",        # minimal public state only
+    "current": "none",          # model of the managed (or importable) configuration
     "preview": "none",          # renders JSON from a model, writes nothing
     "verify": "write",
     "apply": "write",

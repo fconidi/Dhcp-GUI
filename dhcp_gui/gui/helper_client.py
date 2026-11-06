@@ -1,4 +1,9 @@
-"""Talks to the helper process over stdin/stdout using the versioned protocol."""
+"""Talks to the helper processes using the versioned protocol.
+
+`none` operations use one long-lived unprivileged process. `read` and `write`
+operations start a one-shot privileged process through pkexec, so polkit decides
+on every request and the privileged helper never outlives it.
+"""
 from __future__ import annotations
 
 import json
@@ -6,6 +11,9 @@ import subprocess
 import sys
 
 from ..core import protocol
+
+PKEXEC = {"read": ["pkexec", "/usr/lib/dhcp-gui/dhcp-gui-helper-read"],
+          "write": ["pkexec", "/usr/lib/dhcp-gui/dhcp-gui-helper-write"]}
 
 
 class HelperError(Exception):
@@ -15,29 +23,40 @@ class HelperError(Exception):
 
 
 class HelperClient:
-    def __init__(self, command=None):
-        # Read-only operations need no privileges; admin operations will go through pkexec.
-        self.command = command or [sys.executable, "-m", "dhcp_gui.helper"]
+    def __init__(self, commands=None):
+        self.commands = {"none": [sys.executable, "-m", "dhcp_gui.helper"], **PKEXEC, **(commands or {})}
         self.proc = None
 
-    def start(self):
-        if self.proc is None:
-            self.proc = subprocess.Popen(self.command, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+    def _exchange(self, command, payload, keep):
+        try:
+            if keep:
+                if self.proc is None:
+                    self.proc = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+                self.proc.stdin.write(payload)
+                self.proc.stdin.flush()
+                return self.proc.stdout.readline(protocol.MAX_RESPONSE_BYTES + 2)
+            done = subprocess.run(command, input=payload, capture_output=True, timeout=180, check=False)
+        except (OSError, subprocess.SubprocessError) as exc:
+            raise HelperError("unavailable", str(exc)[:100]) from None
+        if done.returncode in (126, 127):
+            raise HelperError("denied", "authorization was not granted")
+        return done.stdout
 
     def call(self, op, model=None, **args):
-        self.start()
-        try:
-            self.proc.stdin.write(protocol.encode_request(op, model, **args))
-            self.proc.stdin.flush()
-            line = self.proc.stdout.readline(protocol.MAX_RESPONSE_BYTES + 2)
-        except OSError as exc:
-            raise HelperError("unavailable", str(exc)) from None
+        klass = protocol.OPERATIONS[op]
+        line = self._exchange(self.commands[klass], protocol.encode_request(op, model, **args), klass == "none")
         if not line:
-            raise HelperError("unavailable", "helper closed")
-        reply = json.loads(line)
+            raise HelperError("unavailable", "no answer from the helper")
+        try:
+            reply = json.loads(line)
+        except ValueError:
+            raise HelperError("internal", "invalid answer") from None
         if not reply.get("ok"):
             err = reply.get("error", {})
-            raise HelperError(err.get("code", "internal"), err.get("detail", ""))
+            detail = err.get("detail", "")
+            if err.get("path"):
+                detail = f"{detail}|{err['path']}"
+            raise HelperError(err.get("code", "internal"), detail)
         return reply["data"]
 
     def close(self):

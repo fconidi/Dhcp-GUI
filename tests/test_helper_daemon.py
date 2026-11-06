@@ -27,8 +27,14 @@ class DaemonTest(unittest.TestCase):
         bad = self.reply(protocol.encode_request("preview", DhcpConfig([sub(pool_end="10.0.0.1")])))
         self.assertEqual(bad["error"]["code"], "validation")
 
-    def test_mutations_are_not_available_yet(self):
-        self.assertEqual(self.reply(protocol.encode_request("service_stop"))["error"]["code"], "unavailable")
+    def test_unprivileged_process_refuses_privileged_operations(self):
+        for op in ("service_stop", "stats", "restore"):
+            raw = daemon.handle(protocol.encode_request(op), runner=fake_runner, allowed={"none"})
+            self.assertEqual(json.loads(raw)["error"]["code"], "denied", op)
+        raw = daemon.handle(protocol.encode_request("stats"), runner=fake_runner, allowed={"none", "read"})
+        self.assertNotEqual(json.loads(raw).get("error", {}).get("code"), "denied")
+        raw = daemon.handle(protocol.encode_request("service_stop"), runner=fake_runner, allowed={"none", "read"})
+        self.assertEqual(json.loads(raw)["error"]["code"], "denied")
 
     def test_garbage_is_rejected_without_crash(self):
         self.assertEqual(self.reply(b"{not json")["error"]["code"], "bad_request")
