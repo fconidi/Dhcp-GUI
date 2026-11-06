@@ -13,7 +13,8 @@ MODULES = (
     "__init__.py", "__main__.py", "i18n.py",
     "core/__init__.py", "core/apply.py", "core/inventory.py", "core/kea_ctl.py", "core/kea_import.py",
     "core/model.py", "core/paths.py", "core/protocol.py", "core/service.py", "core/suggest.py",
-    "gui/__init__.py", "gui/formlogic.py", "gui/helper_client.py", "gui/window.py",
+    "gui/__init__.py", "gui/formlogic.py", "gui/helper_client.py", "gui/style.py", "gui/viewmodel.py",
+    "gui/window.py",
     "helper/__init__.py", "helper/__main__.py", "helper/daemon.py",
 )
 LIB = "usr/lib/dhcp-gui"

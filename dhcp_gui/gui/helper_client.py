@@ -10,6 +10,7 @@ import json
 import os
 import subprocess
 import sys
+import threading
 
 from ..core import protocol
 
@@ -34,6 +35,7 @@ class HelperClient:
     def __init__(self, commands=None):
         self.commands = {"none": _unprivileged_command(), **PKEXEC, **(commands or {})}
         self.proc = None
+        self._lock = threading.Lock()
 
     def _exchange(self, command, payload, keep):
         try:
@@ -52,7 +54,8 @@ class HelperClient:
 
     def call(self, op, model=None, **args):
         klass = protocol.OPERATIONS[op]
-        line = self._exchange(self.commands[klass], protocol.encode_request(op, model, **args), klass == "none")
+        with self._lock:
+            line = self._exchange(self.commands[klass], protocol.encode_request(op, model, **args), klass == "none")
         if not line:
             raise HelperError("unavailable", "no answer from the helper")
         try:

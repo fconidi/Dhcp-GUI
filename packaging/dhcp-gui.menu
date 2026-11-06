@@ -4,6 +4,7 @@
   <Name>Applications</Name>
   <Menu>
     <Name>SysLinuxOS Tools</Name>
+    <Directory>syslinuxos-tools.directory</Directory>
     <Include>
       <Filename>dhcp-gui.desktop</Filename>
     </Include>

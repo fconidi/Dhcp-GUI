@@ -51,6 +51,8 @@ class PackagingTest(unittest.TestCase):
         self.assertEqual(menu.findtext("Name"), "Applications")
         sub = menu.find("Menu")
         self.assertEqual(sub.findtext("Name"), "SysLinuxOS Tools")
+        # MATE only shows the submenu with the shared directory file, as the other Tools do
+        self.assertEqual(sub.findtext("Directory"), "syslinuxos-tools.directory")
         listed = [f.text for f in sub.iter("Filename")]
         self.assertEqual(listed, ["dhcp-gui.desktop"])
         desktop = (ROOT / "packaging/dhcp-gui.desktop").read_text()
