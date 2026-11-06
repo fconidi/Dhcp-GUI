@@ -47,6 +47,7 @@ class MainWindow(Gtk.Window):
         style.install()
         self.helper = helper
         self.inv = None
+        self.unlocked = False
         self.busy = 0
         self.set_default_size(920, 680)
         self.set_size_request(760, 560)
@@ -82,6 +83,8 @@ class MainWindow(Gtk.Window):
         band.pack_start(text, True, True, 0)
         self.spinner = Gtk.Spinner()
         band.pack_end(self.spinner, False, False, 0)
+        self.unlock_btn = button(_("btn_unlock"), self.on_unlock, "dg-primary", icon="changes-allow-symbolic")
+        band.pack_end(self.unlock_btn, False, False, 0)
         self.service_btn = button(_("btn_start"), self.on_service, icon="media-playback-start-symbolic")
         band.pack_end(self.service_btn, False, False, 0)
         return band
@@ -321,7 +324,7 @@ class MainWindow(Gtk.Window):
         ctx.add_class(state)
         self.band_title.set_text(title)
         self.band_detail.set_text(detail)
-        managed = inv["config_state"] == "managed"
+        managed = self.unlocked and inv["config_state"] == "managed"
         running = state == "running"
         self.service_btn.get_child().get_children()[0].set_from_icon_name(
             "media-playback-stop-symbolic" if running else "media-playback-start-symbolic", Gtk.IconSize.BUTTON)
@@ -358,9 +361,13 @@ class MainWindow(Gtk.Window):
                 self.reasons_box.pack_start(label("• " + reason, "dg-hint", wrap=True, selectable=True),
                                             False, False, 0)
         self.reasons_box.show_all()
-        editable = inv["kea_installed"] and inv["config_state"] in ("pristine", "managed", "importable")
+        editable = self.unlocked and inv["kea_installed"] and inv["config_state"] in ("pristine", "managed", "importable")
         for widget in self.subnet_widgets:
             widget.set_sensitive(editable)
+        self.notebook.get_nth_page(1).set_sensitive(editable)
+        self.notebook.get_nth_page(2).set_sensitive(editable)
+        self.unlock_btn.set_visible(inv["kea_installed"] and not self.unlocked)
+        self.unlock_btn.set_sensitive(inv["kea_installed"] and not self.unlocked and self.busy == 0)
         combo = self.entries["interface"]
         combo.remove_all()
         for nic in inv["nics"]:
@@ -369,22 +376,42 @@ class MainWindow(Gtk.Window):
 
     # -- actions ---------------------------------------------------------
     def refresh(self):
+        unlocked = self.unlocked
+
         def work():
-            inv = self.helper.call("inventory")
+            error = None
             try:
-                cur = self.helper.call("current")
-            except HelperError:
-                cur = {}
-            return inv, cur
+                inv = self.helper.call("inventory_private" if unlocked else "inventory")
+            except HelperError as exc:
+                if not unlocked:
+                    raise
+                error, unlocked_ok = exc, False
+                inv = self.helper.call("inventory")
+            else:
+                unlocked_ok = unlocked
+            cur = {}
+            if unlocked_ok:
+                try:
+                    cur = self.helper.call("current")
+                except HelperError as exc:
+                    error = exc
+            return inv, cur, unlocked_ok, error
 
         def done(result):
-            inv, cur = result
+            inv, cur, unlocked_ok, error = result
+            self.unlocked = unlocked_ok
             self.render_inventory(inv)
+            if error is not None:
+                self.fail(error)
             if cur.get("model"):
                 self.load_model(protocol.model_from_dict(cur["model"]))
             self.refresh_monitor()
 
         self.run_async(work, done, lambda exc: self.say(_("helper_error"), "error"), hint=False)
+
+    def on_unlock(self):
+        self.unlocked = True
+        self.refresh()
 
     def on_interface_changed(self):
         name = self.entries["interface"].get_active_text() or ""
