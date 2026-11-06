@@ -3,6 +3,7 @@ import json
 import os
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from dhcp_gui.core import inventory, model
 from dhcp_gui.core.model import DhcpConfig, Subnet
@@ -85,6 +86,13 @@ class InventoryTest(unittest.TestCase):
         self.write(self.paths.debian_conf, "// mine\n" + model.render(cfg))
         inv = inventory.collect(self.paths, FakeRunner(md5="0" * 32))
         self.assertEqual((inv.config_state, inv.writable), ("importable", False))
+
+    def test_unreadable_debian_file_requires_privileged_inventory(self):
+        inv = inventory.Inventory(kea_installed=True)
+        with patch.object(inventory, "is_pristine_debian", return_value=False), \
+             patch("builtins.open", side_effect=PermissionError("denied")):
+            inventory._classify(inv, self.paths, FakeRunner())
+        self.assertEqual((inv.config_state, inv.writable), ("unreadable", False))
 
     def test_managed_state_requires_matching_hashes(self):
         self.write(self.paths.managed_conf, "{}")

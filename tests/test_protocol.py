@@ -28,7 +28,7 @@ class ProtocolTest(unittest.TestCase):
             self.assertIn(cls, ("none", "read", "write"), op)
         for op in ("apply", "restore", "service_start", "service_stop", "verify"):
             self.assertEqual(protocol.OPERATIONS[op], "write", op)
-        for op in ("leases", "stats"):
+        for op in ("leases", "stats", "current", "inventory_private"):
             self.assertEqual(protocol.OPERATIONS[op], "read", op)
 
     def test_apply_needs_a_token(self):

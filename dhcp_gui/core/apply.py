@@ -173,11 +173,17 @@ class Applier:
     def _verify(self, action):
         if action == "none":
             return
-        if not self.ops.is_active():
-            raise ApplyError("apply_failed", "service is not active after the change")
-        answer = self.ops.ctl("status-get")
-        if not answer or answer[0].get("result") != 0:
-            raise ApplyError("apply_failed", "Kea does not answer on its control socket")
+        deadline = time.monotonic() + (15 if action == "restart" else 0)
+        while True:
+            active = self.ops.is_active()
+            if active:
+                answer = self.ops.ctl("status-get")
+                if answer and answer[0].get("result") == 0:
+                    return
+            if action != "restart" or time.monotonic() >= deadline:
+                detail = "Kea does not answer on its control socket" if active else "service is not active after the change"
+                raise ApplyError("apply_failed", detail)
+            time.sleep(0.1)
 
     # -- public ----------------------------------------------------------
     def apply(self, config: model.DhcpConfig, token: str) -> Result:

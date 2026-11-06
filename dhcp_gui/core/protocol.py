@@ -17,8 +17,9 @@ MAX_RESPONSE_BYTES = 1024 * 1024
 # operation -> authorization class (maps to a distinct polkit action)
 OPERATIONS = {
     "ping": "none",
-    "inventory": "none",        # minimal public state only
-    "current": "none",          # model of the managed (or importable) configuration
+    "inventory": "none",        # public service and interface state
+    "inventory_private": "read",  # classifies protected Kea configuration files
+    "current": "read",         # model of the managed (or importable) configuration
     "preview": "none",          # renders JSON from a model, writes nothing
     "verify": "write",
     "apply": "write",

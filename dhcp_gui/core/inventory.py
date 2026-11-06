@@ -31,7 +31,7 @@ class Inventory:
     service_enabled: str = "unknown"
     nics: list[Nic] = field(default_factory=list)
     other_dhcp: list[str] = field(default_factory=list)
-    # kea_missing | pristine | managed | managed_modified | importable | unsupported
+    # kea_missing | pristine | managed | managed_modified | importable | unsupported | unreadable
     config_state: str = "kea_missing"
     reasons: list[str] = field(default_factory=list)
     writable: bool = False
@@ -185,6 +185,9 @@ def _classify(inv: Inventory, paths: Paths, runner) -> None:
         with open(paths.debian_conf, encoding="utf-8") as fh:
             kea_import.import_config(fh.read())
         inv.config_state = "importable"
+    except PermissionError:
+        inv.config_state = "unreadable"
+        inv.reasons.append("administrator access is required to read the Kea configuration")
     except OSError:
         inv.config_state = "unsupported"
         inv.reasons.append("configuration file cannot be read")

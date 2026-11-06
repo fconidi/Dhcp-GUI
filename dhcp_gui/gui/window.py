@@ -42,6 +42,7 @@ class MainWindow(Gtk.Window):
         super().__init__(title=_("app_title"))
         self.helper = helper
         self.inv = None
+        self.unlocked = False
         self.set_default_size(820, 560)
         outer = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6, margin=10)
         self.add(outer)
@@ -77,6 +78,7 @@ class MainWindow(Gtk.Window):
         row = Gtk.Box(spacing=6)
         page.pack_start(row, False, False, 0)
         self._button("refresh", self.refresh, row)
+        self.unlock_btn = self._button("btn_unlock", self.on_unlock, row)
         self.start_btn = self._button("btn_start", self.on_start, row)
         self.stop_btn = self._button("btn_stop", self.on_stop, row)
 
@@ -177,10 +179,18 @@ class MainWindow(Gtk.Window):
     # -- actions ---------------------------------------------------------
     def refresh(self):
         try:
-            self.inv = self.helper.call("inventory")
-        except HelperError:
-            self.status.set_text(_("helper_error"))
-            return
+            self.inv = self.helper.call("inventory_private" if self.unlocked else "inventory")
+        except HelperError as exc:
+            if not self.unlocked:
+                self.status.set_text(_("helper_error"))
+                return
+            self.unlocked = False
+            self.fail(exc)
+            try:
+                self.inv = self.helper.call("inventory")
+            except HelperError:
+                self.status.set_text(_("helper_error"))
+                return
         self.status.set_text("\n".join(summary_lines(self.inv)))
         self.nics.set_text("\n".join(describe_nic(n) for n in self.inv["nics"]))
         combo = self.entries["interface"]
@@ -188,18 +198,24 @@ class MainWindow(Gtk.Window):
         for nic in self.inv["nics"]:
             if nic["up"] and nic["addresses"]:
                 combo.append_text(nic["name"])
-        editable = self.inv["config_state"] in ("pristine", "managed", "importable") and self.inv["kea_installed"]
-        managed = self.inv["config_state"] == "managed"
+        editable = self.unlocked and self.inv["config_state"] in ("pristine", "managed", "importable")
+        managed = self.unlocked and self.inv["config_state"] == "managed"
+        self.unlock_btn.set_sensitive(self.inv["kea_installed"] and not self.unlocked)
         self.start_btn.set_sensitive(managed)
         self.stop_btn.set_sensitive(managed)
         self.notebook.get_nth_page(1).set_sensitive(editable)
         self.notebook.get_nth_page(2).set_sensitive(editable)
-        try:
-            cur = self.helper.call("current")
-            if cur.get("model"):
-                self.load_model(protocol.model_from_dict(cur["model"]))
-        except HelperError:
-            pass
+        if self.unlocked:
+            try:
+                cur = self.helper.call("current")
+                if cur.get("model"):
+                    self.load_model(protocol.model_from_dict(cur["model"]))
+            except HelperError as exc:
+                self.fail(exc)
+
+    def on_unlock(self):
+        self.unlocked = True
+        self.refresh()
 
     def on_interface_changed(self):
         name = self.entries["interface"].get_active_text() or ""

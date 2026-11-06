@@ -28,7 +28,7 @@ class DaemonTest(unittest.TestCase):
         self.assertEqual(bad["error"]["code"], "validation")
 
     def test_unprivileged_process_refuses_privileged_operations(self):
-        for op in ("service_stop", "stats", "restore"):
+        for op in ("service_stop", "stats", "restore", "current", "inventory_private"):
             raw = daemon.handle(protocol.encode_request(op), runner=fake_runner, allowed={"none"})
             self.assertEqual(json.loads(raw)["error"]["code"], "denied", op)
         raw = daemon.handle(protocol.encode_request("stats"), runner=fake_runner, allowed={"none", "read"})

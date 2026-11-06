@@ -26,7 +26,7 @@ def handle(line: bytes, paths: Paths = Paths(), runner=inventory.run, ops=None, 
     try:
         if op == "ping":
             return protocol.ok(pong=True)
-        if op == "inventory":
+        if op in ("inventory", "inventory_private"):
             return protocol.ok(**inventory.collect(paths, runner).to_dict())
         if op == "current":
             inv = inventory.collect(paths, runner)

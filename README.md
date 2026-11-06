@@ -28,9 +28,9 @@ Kea's default configuration does not serve any network until you apply a subnet 
 
 ## Use
 
-Start **Dhcp-GUI** from the SysLinuxOS Tools menu, or run `dhcp-gui`. Reading the status needs
-no password; reading statistics and leases asks for the administrator password once for a few
-minutes; every change asks for it each time.
+Start **Dhcp-GUI** from the SysLinuxOS Tools menu, or run `dhcp-gui`. The service and interface
+status is shown without a password. Unlocking the configuration and reading statistics or leases
+asks for the administrator password once for a few minutes; every change asks for it each time.
 
 Make sure no other DHCP server is active on the same network before starting the service.
 

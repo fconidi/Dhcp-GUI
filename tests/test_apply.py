@@ -99,6 +99,24 @@ class ApplyTest(ApplyBase):
         self.assertFalse(os.path.exists(self.paths.backups + "/IN_PROGRESS"))
         self.assertEqual(inventory.collect(self.paths, self.runner).config_state, "managed")
 
+    def test_restart_waits_for_control_socket_to_be_ready(self):
+        ops = FakeOps(active=True)
+        original = ops.ctl
+        attempts = {"n": 0}
+
+        def delayed(command, arguments=None):
+            if command == "status-get":
+                attempts["n"] += 1
+                if attempts["n"] < 3:
+                    return None
+            return original(command, arguments)
+
+        ops.ctl = delayed
+        result = self.make(ops).apply(cfg(), self.token())
+        self.assertTrue(result.ok)
+        self.assertEqual(result.action, "restart")
+        self.assertEqual(attempts["n"], 3)
+
     def test_second_apply_prefers_config_reload(self):
         ops = FakeOps(active=True)
         self.make(ops).apply(cfg(), self.token())
