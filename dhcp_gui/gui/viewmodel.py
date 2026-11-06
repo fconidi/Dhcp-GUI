@@ -24,6 +24,8 @@ def service_state(inv: dict) -> tuple[str, str, str]:
     state = "running" if active == "active" else ("stopped" if active in ("inactive", "failed") else "problem")
     title = {"running": _("svc_running"), "stopped": _("svc_stopped"), "problem": _("svc_unknown")}[state]
     detail = _("svc_detail", version=inv["kea_version"], enabled=inv["service_enabled"])
+    if inv["config_state"] in ("managed_modified", "unsupported"):
+        return state, title, detail          # the read-only banner already explains the state
     return state, title, detail + "  ·  " + _("state_" + inv["config_state"])
 
 

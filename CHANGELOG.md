@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.2
+
+- Redesigned window: status bar with the service state and the start/stop action, warnings shown where they matter, grouped settings with hints, interface list with clear badges, pool usage bars and lease list.
+- Password prompts no longer freeze the window; settings are checked before asking for the password and the faulty field is highlighted.
+- Follows the light or dark system theme.
+- The menu entry now also uses the shared SysLinuxOS Tools folder definition.
+
 ## 0.1.1
 
 - Configuration files protected by Debian permissions can be unlocked through Polkit and managed in the interface.

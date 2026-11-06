@@ -50,7 +50,7 @@ class MainWindow(Gtk.Window):
         self.unlocked = False
         self.busy = 0
         self.set_default_size(920, 680)
-        self.set_size_request(760, 560)
+        self.set_size_request(820, 560)
         root = css(Gtk.Box(orientation=Gtk.Orientation.VERTICAL), "dg-root")
         self.add(root)
         root.pack_start(self._build_band(), False, False, 0)
@@ -62,6 +62,7 @@ class MainWindow(Gtk.Window):
         self.msg_label = label("", wrap=True, selectable=True)
         self.msg.pack_start(self.msg_label, True, True, 0)
         self.msg.pack_end(button(_("dismiss"), lambda: self.msg.hide(), "dg-quiet"), False, False, 0)
+        self.msg.set_no_show_all(True)
         root.pack_end(self.msg, False, False, 0)
         self._build_status()
         self._build_subnet()
@@ -89,11 +90,20 @@ class MainWindow(Gtk.Window):
         band.pack_end(self.service_btn, False, False, 0)
         return band
 
-    def _page(self, title):
+    def _page(self, title, actions=None):
+        """A scrolling page of fixed comfortable width. `actions` stays visible below the scroll."""
         scroll = Gtk.ScrolledWindow(hscrollbar_policy=Gtk.PolicyType.NEVER)
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=14, margin=18)
+        box.set_halign(Gtk.Align.CENTER)
+        box.set_size_request(780, -1)
         scroll.add(box)
-        self.notebook.append_page(scroll, Gtk.Label(label=_(title)))
+        if actions is None:
+            self.notebook.append_page(scroll, Gtk.Label(label=_(title)))
+        else:
+            wrapper = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+            wrapper.pack_start(scroll, True, True, 0)
+            wrapper.pack_end(css(actions, "dg-actionbar"), False, False, 0)
+            self.notebook.append_page(wrapper, Gtk.Label(label=_(title)))
         return box
 
     def _section(self, title, page):
@@ -122,7 +132,8 @@ class MainWindow(Gtk.Window):
             grid.attach(label(_(hint), "dg-hint", wrap=True), 1, row * 2 + 1, 1, 1)
 
     def _build_subnet(self):
-        page = self._page("tab_subnet")
+        bar = Gtk.Box(spacing=8)
+        page = self._page("tab_subnet", actions=bar)
         self.entries = {}
 
         def entry(name):
@@ -156,8 +167,6 @@ class MainWindow(Gtk.Window):
         self._field_row(pxe, 1, "boot_file", entry("boot_file"))
         self.lease_cmds = Gtk.CheckButton(label=_("opt_lease_cmds"))
         page.pack_start(self.lease_cmds, False, False, 0)
-        bar = Gtk.Box(spacing=8)
-        page.pack_start(bar, False, False, 0)
         bar.pack_start(button(_("f_suggest"), self.on_interface_changed, "dg-quiet", icon="view-refresh-symbolic"),
                        False, False, 0)
         self.apply_btn = button(_("btn_apply"), self.on_apply, "dg-primary")
@@ -192,23 +201,25 @@ class MainWindow(Gtk.Window):
         for t in ID_TYPES:
             self.res_type.append_text(t)
         self.res_type.set_active(0)
-        self.res_id = css(Gtk.Entry(placeholder_text=_("res_id_hint"), hexpand=True), "dg-field", "dg-mono")
-        self.res_ip = css(Gtk.Entry(placeholder_text=_("res_ip_hint"), hexpand=True), "dg-field", "dg-mono")
-        self.res_host = css(Gtk.Entry(placeholder_text=_("col_hostname"), hexpand=True), "dg-field")
+        self.res_id = css(Gtk.Entry(placeholder_text=_("res_id_hint"), hexpand=True, width_chars=14), "dg-field", "dg-mono")
+        self.res_ip = css(Gtk.Entry(placeholder_text=_("res_ip_hint"), hexpand=True, width_chars=12), "dg-field", "dg-mono")
+        self.res_host = css(Gtk.Entry(placeholder_text=_("col_hostname"), hexpand=True, width_chars=8), "dg-field")
         for w in (self.res_type, self.res_id, self.res_ip, self.res_host):
             add.pack_start(w, w is not self.res_type, True, 0)
         add.pack_start(button(_("btn_add"), self.on_add_reservation, icon="list-add-symbolic"), False, False, 0)
-        add.pack_start(button(_("btn_remove"), self.on_remove_reservation, "dg-danger", icon="list-remove-symbolic"),
-                       False, False, 0)
+        remove = button("", self.on_remove_reservation, "dg-danger", icon="list-remove-symbolic")
+        remove.set_tooltip_text(_("btn_remove"))
+        remove.get_accessible().set_name(_("btn_remove"))
+        add.pack_start(remove, False, False, 0)
         self.res_page_body = body
         self._update_res_stack()
 
     def _build_monitor(self):
         page = self._page("tab_monitor")
-        usage = self._section("col_pool", page)
+        usage = self._section("sec_usage", page)
         self.usage_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
         usage.pack_start(self.usage_box, False, False, 0)
-        leases = self._section("tab_monitor", page)
+        leases = self._section("sec_leases", page)
         self.lease_store = Gtk.ListStore(str, str, str)
         view = css(Gtk.TreeView(model=self.lease_store), "dg-list")
         for i, key in enumerate(("col_ip", "col_identifier", "col_hostname")):
@@ -234,6 +245,7 @@ class MainWindow(Gtk.Window):
         ctx.remove_class("error")
         ctx.add_class(kind)
         self.msg_label.set_text(text)
+        self.msg.set_no_show_all(False)
         self.msg.show_all()
 
     def fail(self, exc):
@@ -541,9 +553,12 @@ class MainWindow(Gtk.Window):
                 head.pack_start(label(_("mon_subnet", id=s["subnet_id"]), "dg-nic-name"), False, False, 0)
                 head.pack_end(label(f"{s['percent']}%", "dg-mono"), False, False, 0)
                 bar = css(Gtk.LevelBar(min_value=0, max_value=100, value=min(s["percent"], 100)), "dg-usage")
-                bar.add_offset_value("high", 79.9)
-                bar.add_offset_value("full", 94.9)
-                bar.add_offset_value("low", 0)
+                bar.set_mode(Gtk.LevelBarMode.CONTINUOUS)
+                for name in ("low", "high", "full"):
+                    bar.remove_offset_value(name)
+                level = viewmodel.usage_class(s["percent"])
+                if level:
+                    bar.get_style_context().add_class(level)
                 row.pack_start(head, False, False, 0)
                 row.pack_start(bar, False, False, 0)
                 row.pack_start(label(_("mon_usage", used=s["assigned"], total=s["total"]), "dg-hint"), False, False, 0)

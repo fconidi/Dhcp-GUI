@@ -94,11 +94,13 @@ button:focus { outline-color: alpha(@dg_accent, 0.7); outline-offset: 1px; outli
 
 /* usage bars */
 levelbar.dg-usage block.filled { background-color: @dg_accent; border-radius: 4px; }
-levelbar.dg-usage block.filled.high { background-color: @dg_warn; }
-levelbar.dg-usage block.filled.full { background-color: @dg_err; }
+levelbar.dg-usage.high block.filled { background-color: @dg_warn; }
+levelbar.dg-usage.full block.filled { background-color: @dg_err; }
 levelbar.dg-usage block.empty { background-color: alpha(@theme_fg_color, 0.14); border-radius: 4px; }
 levelbar.dg-usage trough { min-height: 10px; }
 
+.dg-actionbar { padding: 10px 18px; border-top: 1px solid alpha(@theme_fg_color, 0.14);
+  background-color: alpha(@theme_fg_color, 0.04); }
 .dg-empty { padding: 28px; opacity: 0.75; }
 treeview.dg-list { background-color: transparent; }
 treeview.dg-list:selected { background-color: alpha(@dg_accent, 0.55); color: @theme_selected_fg_color; }
