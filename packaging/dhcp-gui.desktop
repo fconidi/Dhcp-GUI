@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name=Dhcp-GUI
+GenericName=DHCP server
+GenericName[it]=Server DHCP
+Comment=Configure and manage the Kea DHCPv4 server of this computer
+Comment[it]=Configura e gestisci il server DHCPv4 Kea di questo computer
+Exec=dhcp-gui
+Icon=dhcp-gui
+Terminal=false
+Categories=Network;X-SysLinuxOS-Networking;
+Keywords=dhcp;kea;server;network;pxe;
+StartupNotify=true

@@ -1,0 +1,12 @@
+Package: dhcp-gui
+Version: @VERSION@
+Architecture: all
+Section: net
+Priority: optional
+Maintainer: Franco Conidi <fconidi@gmail.com>
+Depends: python3 (>= 3.11), python3-gi, gir1.2-gtk-3.0, pkexec | policykit-1, kea-dhcp4-server, iproute2
+Description: Graphical manager for the Kea DHCPv4 server
+ Dhcp-GUI configures and manages the Kea DHCPv4 server installed on this
+ computer: subnet, address pool, gateway, DNS, static reservations and PXE
+ options, with a preview of the change, backup and automatic restore if a change
+ fails. Changes are made by a small helper authorized through polkit.

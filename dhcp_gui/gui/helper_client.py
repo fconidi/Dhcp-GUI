@@ -7,10 +7,18 @@ on every request and the privileged helper never outlives it.
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 
 from ..core import protocol
+
+def _unprivileged_command():
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__ + "/..")))
+    code = ("import sys, runpy; sys.path.insert(0, sys.argv[1]); sys.argv = [sys.argv[0], 'none']; "
+            "runpy.run_module('dhcp_gui.helper', run_name='__main__')")
+    return [sys.executable, "-I", "-c", code, root]
+
 
 PKEXEC = {"read": ["pkexec", "/usr/lib/dhcp-gui/dhcp-gui-helper-read"],
           "write": ["pkexec", "/usr/lib/dhcp-gui/dhcp-gui-helper-write"]}
@@ -24,7 +32,7 @@ class HelperError(Exception):
 
 class HelperClient:
     def __init__(self, commands=None):
-        self.commands = {"none": [sys.executable, "-m", "dhcp_gui.helper"], **PKEXEC, **(commands or {})}
+        self.commands = {"none": _unprivileged_command(), **PKEXEC, **(commands or {})}
         self.proc = None
 
     def _exchange(self, command, payload, keep):

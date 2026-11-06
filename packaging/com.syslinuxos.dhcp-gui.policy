@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE policyconfig PUBLIC "-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN"
+ "http://www.freedesktop.org/standards/PolicyKit/1.0/policyconfig.dtd">
+<policyconfig>
+  <vendor>SysLinuxOS</vendor>
+  <action id="com.syslinuxos.dhcp-gui.read">
+    <description>Read the status and leases of the Kea DHCP server</description>
+    <description xml:lang="it">Leggi stato e lease del server DHCP Kea</description>
+    <message>Authentication is required to read the Kea DHCP server status and leases</message>
+    <message xml:lang="it">Serve l'autenticazione per leggere stato e lease del server DHCP Kea</message>
+    <defaults>
+      <allow_any>no</allow_any>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>auth_admin_keep</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/lib/dhcp-gui/dhcp-gui-helper-read</annotate>
+    <annotate key="org.freedesktop.policykit.exec.allow_gui">false</annotate>
+  </action>
+  <action id="com.syslinuxos.dhcp-gui.write">
+    <description>Change the configuration and state of the Kea DHCP server</description>
+    <description xml:lang="it">Modifica configurazione e stato del server DHCP Kea</description>
+    <message>Authentication is required to change the Kea DHCP server</message>
+    <message xml:lang="it">Serve l'autenticazione per modificare il server DHCP Kea</message>
+    <defaults>
+      <allow_any>no</allow_any>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>auth_admin</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/lib/dhcp-gui/dhcp-gui-helper-write</annotate>
+    <annotate key="org.freedesktop.policykit.exec.allow_gui">false</annotate>
+  </action>
+</policyconfig>

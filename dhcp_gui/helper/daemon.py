@@ -5,6 +5,7 @@ until the safe apply machinery exists.
 """
 from __future__ import annotations
 
+import os
 import sys
 
 from ..core import apply as applymod
@@ -79,3 +80,20 @@ def serve(stdin=None, stdout=None, allowed=None, once=False) -> int:
         stdout.flush()
         if once:
             return 0
+
+
+CLASSES = {"none": {"none"}, "read": {"none", "read"}, "write": {"none", "read", "write"}}
+
+
+def main(mode: str) -> int:
+    """Entry point for the helper processes.
+
+    The classes served are fixed by the installed wrapper that calls this function
+    (never by the client). Privileged modes answer one request and exit.
+    """
+    if mode not in CLASSES:
+        return 2
+    if mode != "none":
+        os.environ["PATH"] = "/usr/sbin:/usr/bin:/sbin:/bin"
+        os.umask(0o022)
+    return serve(allowed=CLASSES[mode], once=mode != "none")
