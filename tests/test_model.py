@@ -1,4 +1,5 @@
 import json
+import sysconfig
 import unittest
 
 from dhcp_gui.core import model
@@ -32,6 +33,16 @@ class ModelTest(unittest.TestCase):
     def test_hook_is_only_the_fixed_lease_cmds_library(self):
         data = model.to_kea(DhcpConfig([sub()], lease_cmds=True))["Dhcp4"]
         self.assertEqual(data["hooks-libraries"], [{"library": model.HOOK_LEASE_CMDS}])
+
+    def test_lease_hook_uses_debian_multiarch_library_path(self):
+        self.assertEqual(model.lease_hook_path("x86_64-linux-gnu"),
+                         "/usr/lib/x86_64-linux-gnu/kea/hooks/libdhcp_lease_cmds.so")
+        self.assertEqual(model.lease_hook_path("aarch64-linux-gnu"),
+                         "/usr/lib/aarch64-linux-gnu/kea/hooks/libdhcp_lease_cmds.so")
+        self.assertEqual(model.lease_hook_path("arm-linux-gnueabihf"),
+                         "/usr/lib/arm-linux-gnueabihf/kea/hooks/libdhcp_lease_cmds.so")
+        self.assertEqual(model.HOOK_LEASE_CMDS,
+                         model.lease_hook_path(sysconfig.get_config_var("MULTIARCH")))
 
     def test_pool_outside_subnet(self):
         self.assertEqual(code(DhcpConfig([sub(pool_end="192.168.51.5")])), "outside_subnet")

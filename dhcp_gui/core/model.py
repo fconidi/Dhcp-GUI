@@ -8,9 +8,17 @@ from __future__ import annotations
 import ipaddress
 import json
 import re
+import sysconfig
 from dataclasses import dataclass, field
 
-HOOK_LEASE_CMDS = "/usr/lib/x86_64-linux-gnu/kea/hooks/libdhcp_lease_cmds.so"
+
+def lease_hook_path(multiarch: str | None) -> str:
+    if not multiarch:
+        raise RuntimeError("Debian multiarch path is unavailable")
+    return f"/usr/lib/{multiarch}/kea/hooks/libdhcp_lease_cmds.so"
+
+
+HOOK_LEASE_CMDS = lease_hook_path(sysconfig.get_config_var("MULTIARCH"))
 CONTROL_SOCKET = "/run/kea/kea4-ctrl-socket"
 LEASE_FILE = "/var/lib/kea/kea-leases4.csv"
 
