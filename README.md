@@ -23,6 +23,23 @@ Kea file is never modified (the app uses its own file in `/etc/kea/managed/`).
 For configurations with multiple subnets, the guided form shows only the first and stays
 read-only until it supports editing all of them.
 
+## Installation
+
+On Debian 13, SysLinuxOS or a compatible system, add the [SysLinuxOS-Tools APT repository](https://github.com/fconidi/SysLinuxOS-Tools#installation-client-side), then run:
+
+```bash
+sudo apt update
+sudo apt install dhcp-gui
+```
+
+Alternatively, download the [dhcp-gui 0.1.3 Debian package](https://github.com/fconidi/Dhcp-GUI/releases/download/v0.1.3/dhcp-gui_0.1.3_all.deb), then install it from the download directory:
+
+```bash
+sudo apt install ./dhcp-gui_0.1.3_all.deb
+```
+
+Other versions are listed on the [Releases page](https://github.com/fconidi/Dhcp-GUI/releases).
+
 ## Requirements
 
 `kea-dhcp4-server`, Python 3.11+, GTK 3 and polkit. Installing the package pulls them in.
