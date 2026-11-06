@@ -1,6 +1,7 @@
 import unittest
 
 from dhcp_gui import i18n
+from dhcp_gui.core import model, protocol
 from dhcp_gui.gui import viewmodel
 
 try:
@@ -94,6 +95,50 @@ class UnlockTest(unittest.TestCase):
             self.assertFalse(gui.unlock_btn.get_visible())
             self.assertIn("inventory_private", helper.calls)
             self.assertIn("current", helper.calls)
+        finally:
+            gui.destroy()
+
+
+@unittest.skipIf(window is None or Gdk is None or Gdk.Display.get_default() is None, "display not available")
+class ExistingConfigurationTest(unittest.TestCase):
+    def _open(self, subnets):
+        class Helper:
+            def call(self, op, *args, **kwargs):
+                if op == "inventory":
+                    return {**BASE, "config_state": "unreadable", "writable": False}
+                if op == "inventory_private":
+                    return {**BASE, "config_state": "managed"}
+                if op == "current":
+                    return {"model": protocol.model_to_dict(model.DhcpConfig(subnets))}
+                if op in ("stats", "leases"):
+                    raise window.HelperError("unavailable", "x")
+                raise AssertionError(op)
+
+        gui = window.MainWindow(Helper())
+        settle(gui)
+        gui.on_unlock()
+        settle(gui)
+        return gui
+
+    def test_multiple_subnets_cannot_be_edited_in_single_subnet_form(self):
+        first = model.Subnet(3, "eth1", "192.168.50.1", "192.168.50.0/24",
+                             "192.168.50.100", "192.168.50.200")
+        second = model.Subnet(4, "eth2", "192.168.60.1", "192.168.60.0/24",
+                              "192.168.60.100", "192.168.60.200")
+        gui = self._open([first, second])
+        try:
+            self.assertFalse(gui.notebook.get_nth_page(1).get_sensitive())
+            self.assertFalse(gui.notebook.get_nth_page(2).get_sensitive())
+            self.assertIsNone(gui.validate_form())
+        finally:
+            gui.destroy()
+
+    def test_existing_subnet_id_survives_form_edit(self):
+        sub = model.Subnet(7, "eth1", "192.168.50.1", "192.168.50.0/24",
+                           "192.168.50.100", "192.168.50.200")
+        gui = self._open([sub])
+        try:
+            self.assertEqual(gui.current_model().subnets[0].id, 7)
         finally:
             gui.destroy()
 

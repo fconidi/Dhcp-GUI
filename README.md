@@ -20,6 +20,8 @@ Dhcp-GUI configures it without editing JSON.
 Configurations written by hand and not covered by the supported options are shown
 read-only. A supported custom configuration can be adopted after confirmation; the original
 Kea file is never modified (the app uses its own file in `/etc/kea/managed/`).
+For configurations with multiple subnets, the guided form shows only the first and stays
+read-only until it supports editing all of them.
 
 ## Requirements
 

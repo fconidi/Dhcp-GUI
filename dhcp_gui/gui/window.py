@@ -49,6 +49,8 @@ class MainWindow(Gtk.Window):
         self.inv = None
         self.unlocked = False
         self.busy = 0
+        self.loaded_subnet_id = 1
+        self.loaded_subnet_count = 0
         self.set_default_size(920, 680)
         self.set_size_request(820, 560)
         root = css(Gtk.Box(orientation=Gtk.Orientation.VERTICAL), "dg-root")
@@ -302,9 +304,12 @@ class MainWindow(Gtk.Window):
         return [tuple(row) for row in self.res_store]
 
     def current_model(self):
-        return formlogic.form_to_model(self.values(), self.reservations(), self.lease_cmds.get_active())
+        return formlogic.form_to_model(self.values(), self.reservations(), self.lease_cmds.get_active(),
+                                       subnet_id=self.loaded_subnet_id)
 
     def load_model(self, config):
+        self.loaded_subnet_count = len(config.subnets)
+        self.loaded_subnet_id = config.subnets[0].id
         values, res, hook = formlogic.model_to_form(config)
         for name, widget in self.entries.items():
             (widget.get_child() if name == "interface" else widget).set_text(values[name])
@@ -313,6 +318,15 @@ class MainWindow(Gtk.Window):
             self.res_store.append(list(row))
         self._update_res_stack()
         self.lease_cmds.set_active(hook)
+        if self.loaded_subnet_count > 1:
+            self._set_form_editable(False)
+            self.say(_("multi_subnet_readonly"), "warn")
+
+    def _set_form_editable(self, editable):
+        for widget in self.subnet_widgets:
+            widget.set_sensitive(editable)
+        self.notebook.get_nth_page(1).set_sensitive(editable)
+        self.notebook.get_nth_page(2).set_sensitive(editable)
 
     def _clear_error(self, name):
         css_ctx = self.entries[name].get_style_context()
@@ -373,11 +387,10 @@ class MainWindow(Gtk.Window):
                 self.reasons_box.pack_start(label("• " + reason, "dg-hint", wrap=True, selectable=True),
                                             False, False, 0)
         self.reasons_box.show_all()
-        editable = self.unlocked and inv["kea_installed"] and inv["config_state"] in ("pristine", "managed", "importable")
-        for widget in self.subnet_widgets:
-            widget.set_sensitive(editable)
-        self.notebook.get_nth_page(1).set_sensitive(editable)
-        self.notebook.get_nth_page(2).set_sensitive(editable)
+        editable = (self.unlocked and inv["kea_installed"]
+                    and inv["config_state"] in ("pristine", "managed", "importable")
+                    and self.loaded_subnet_count <= 1)
+        self._set_form_editable(editable)
         self.unlock_btn.set_visible(inv["kea_installed"] and not self.unlocked)
         self.unlock_btn.set_sensitive(inv["kea_installed"] and not self.unlocked and self.busy == 0)
         combo = self.entries["interface"]
@@ -412,6 +425,9 @@ class MainWindow(Gtk.Window):
         def done(result):
             inv, cur, unlocked_ok, error = result
             self.unlocked = unlocked_ok
+            if not cur.get("model"):
+                self.loaded_subnet_id = 1
+                self.loaded_subnet_count = 0
             self.render_inventory(inv)
             if error is not None:
                 self.fail(error)
@@ -442,6 +458,9 @@ class MainWindow(Gtk.Window):
 
     def validate_form(self):
         """Validate locally (no password needed); highlight the offending field."""
+        if self.loaded_subnet_count > 1:
+            self.say(_("multi_subnet_readonly"), "error")
+            return None
         try:
             config = self.current_model()
             from ..core import model as m
