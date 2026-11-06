@@ -35,6 +35,7 @@ class Inventory:
     config_state: str = "kea_missing"
     reasons: list[str] = field(default_factory=list)
     writable: bool = False
+    token: str = ""        # fingerprint of the files the app manages; apply must echo it
 
     def to_dict(self):
         return asdict(self)
@@ -135,6 +136,12 @@ def read_state(paths: Paths):
     return data
 
 
+def config_token(paths: Paths) -> str:
+    parts = [sha256_file(p) or "-" for p in (paths.managed_conf, paths.dropin, paths.state, paths.debian_conf)]
+    parts.append("pending" if os.path.exists(paths.backups + "/IN_PROGRESS") else "idle")
+    return hashlib.sha256("|".join(parts).encode()).hexdigest()
+
+
 def collect(paths: Paths = Paths(), runner=run) -> Inventory:
     inv = Inventory()
     rc, out = runner(["dpkg-query", "-W", "-f=${Status}|${Version}", "kea-dhcp4-server"])
@@ -147,6 +154,7 @@ def collect(paths: Paths = Paths(), runner=run) -> Inventory:
     rc, out = runner(["ip", "-j", "-4", "addr", "show"])
     inv.nics = parse_nics(out) if rc == 0 else []
     inv.other_dhcp = other_dhcp_servers(paths)
+    inv.token = config_token(paths)
     if not inv.kea_installed:
         return inv
     _classify(inv, paths, runner)
@@ -154,6 +162,10 @@ def collect(paths: Paths = Paths(), runner=run) -> Inventory:
 
 
 def _classify(inv: Inventory, paths: Paths, runner) -> None:
+    if os.path.exists(paths.backups + "/IN_PROGRESS"):
+        inv.config_state = "managed_modified"
+        inv.reasons.append("an interrupted change needs recovery (restore the last backup)")
+        return
     state = read_state(paths)
     managed_exists = os.path.exists(paths.managed_conf)
     if state is not None or managed_exists:

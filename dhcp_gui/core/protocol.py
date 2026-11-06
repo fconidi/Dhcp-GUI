@@ -19,13 +19,13 @@ OPERATIONS = {
     "ping": "none",
     "inventory": "none",        # minimal public state only
     "preview": "none",          # renders JSON from a model, writes nothing
-    "verify": "admin",
-    "apply": "admin",
-    "restore": "admin",
-    "service_start": "admin",
-    "service_stop": "admin",
-    "stats": "none",
-    "leases": "admin",          # lease data is sensitive
+    "verify": "write",
+    "apply": "write",
+    "restore": "write",
+    "service_start": "write",
+    "service_stop": "write",
+    "stats": "read",            # needs the root-only Kea control socket
+    "leases": "read",           # lease data is sensitive
 }
 MODEL_OPERATIONS = {"preview", "verify", "apply"}
 ERROR_CODES = {
@@ -114,7 +114,11 @@ def parse_request(line: bytes):
     args = body.get("args", {})
     if not isinstance(args, dict):
         raise ProtocolError("bad_request", "args must be an object")
-    if op in ("leases",):
+    if op == "apply":
+        args = _only(args, {"token"}, "args")
+        if not isinstance(args.get("token"), str) or not 1 <= len(args["token"]) <= 128:
+            raise ProtocolError("bad_request", "token is required")
+    elif op in ("leases",):
         args = _only(args, {"from_ip", "limit"}, "args")
         limit = args.get("limit", 100)
         if not isinstance(limit, int) or isinstance(limit, bool) or not 1 <= limit <= 1000:

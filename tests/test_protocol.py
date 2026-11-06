@@ -25,9 +25,17 @@ class ProtocolTest(unittest.TestCase):
 
     def test_every_operation_has_an_authorization_class(self):
         for op, cls in protocol.OPERATIONS.items():
-            self.assertIn(cls, ("none", "admin"), op)
-        for op in ("apply", "restore", "service_start", "service_stop", "verify", "leases"):
-            self.assertEqual(protocol.OPERATIONS[op], "admin", op)
+            self.assertIn(cls, ("none", "read", "write"), op)
+        for op in ("apply", "restore", "service_start", "service_stop", "verify"):
+            self.assertEqual(protocol.OPERATIONS[op], "write", op)
+        for op in ("leases", "stats"):
+            self.assertEqual(protocol.OPERATIONS[op], "read", op)
+
+    def test_apply_needs_a_token(self):
+        with self.assertRaises(ProtocolError):
+            protocol.parse_request(protocol.encode_request("apply", cfg()))
+        op, args, _m = protocol.parse_request(protocol.encode_request("apply", cfg(), token="abc"))
+        self.assertEqual(args, {"token": "abc"})
 
     def test_unknown_operation_and_version(self):
         for raw, code in ((req(op="shell"), "unknown_operation"), (req(version=2), "bad_version")):
