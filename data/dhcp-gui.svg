@@ -1,19 +1,31 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-label="DHCP-GUI">
   <defs>
-    <radialGradient id="disc" cx="38%" cy="28%" r="85%">
-      <stop offset="0" stop-color="#2a82c8"/>
-      <stop offset="0.55" stop-color="#14508a"/>
-      <stop offset="1" stop-color="#0a2a4a"/>
-    </radialGradient>
+    <linearGradient id="surface" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#214b7f"/>
+      <stop offset="0.48" stop-color="#12335e"/>
+      <stop offset="1" stop-color="#081d3b"/>
+    </linearGradient>
+    <linearGradient id="node" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f9fdff"/>
+      <stop offset="1" stop-color="#dcebf7"/>
+    </linearGradient>
   </defs>
-  <circle cx="64" cy="64" r="60" fill="url(#disc)"/>
-  <g fill="none" stroke="#ffffff" stroke-width="6" stroke-linecap="round">
-    <path d="M64 40v22M64 62L38 82M64 62l26 20"/>
+  <rect x="4" y="4" width="120" height="120" rx="31" fill="url(#surface)"/>
+  <rect x="5" y="5" width="118" height="118" rx="30" fill="none" stroke="#6aa5dc" stroke-opacity=".48" stroke-width="2"/>
+  <path d="M27 69h74M64 51v18M27 69v13M64 69v13M101 69v13" fill="none" stroke="#66c8ee" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="38" y="22" width="52" height="31" rx="10" fill="url(#node)"/>
+  <rect x="47" y="31" width="24" height="4" rx="2" fill="#173d6b"/>
+  <rect x="47" y="40" width="17" height="4" rx="2" fill="#6694ba"/>
+  <circle cx="78" cy="39" r="4" fill="#2782c9"/>
+  <g fill="url(#node)">
+    <rect x="15" y="80" width="24" height="24" rx="8"/>
+    <rect x="52" y="80" width="24" height="24" rx="8"/>
+    <rect x="89" y="80" width="24" height="24" rx="8"/>
   </g>
-  <g fill="#ffffff">
-    <circle cx="64" cy="34" r="10"/>
-    <circle cx="34" cy="88" r="10"/>
-    <circle cx="94" cy="88" r="10"/>
+  <g fill="#1769ae">
+    <circle cx="27" cy="92" r="4"/>
+    <circle cx="64" cy="92" r="4"/>
+    <circle cx="101" cy="92" r="4"/>
   </g>
 </svg>
