@@ -1,7 +1,7 @@
 # Dhcp-GUI
 
 A graphical manager for the Kea DHCPv4 server of a Debian-based computer
-(Debian 13, SysLinuxOS). Kea stays the DHCP engine and the system service;
+(SysLinuxOS 13, Debian 13 and other debian based). Kea stays the DHCP engine and the system service;
 Dhcp-GUI configures it without editing JSON.
 
 ## Features
