@@ -23,6 +23,22 @@ Kea file is never modified (the app uses its own file in `/etc/kea/managed/`).
 For configurations with multiple subnets, the guided form shows only the first and stays
 read-only until it supports editing all of them.
 
+## Screenshots
+
+These screenshots show the interface with example network addresses and devices.
+
+**Status** — service state and available network interfaces.
+
+<img src="https://raw.githubusercontent.com/fconidi/Dhcp-GUI/main/docs/images/status.png" alt="DHCP-GUI Status tab showing the stopped service and a network interface" width="720">
+
+**Subnet** — address pool, lease time and options sent to clients.
+
+<img src="https://raw.githubusercontent.com/fconidi/Dhcp-GUI/main/docs/images/subnet.png" alt="DHCP-GUI Subnet tab showing network settings and client options" width="720">
+
+**Reservations** — fixed addresses assigned by device identifier.
+
+<img src="https://raw.githubusercontent.com/fconidi/Dhcp-GUI/main/docs/images/reservations.png" alt="DHCP-GUI Reservations tab with an example fixed address" width="720">
+
 ## Installation
 
 On Debian 13, SysLinuxOS or a compatible system, add the [SysLinuxOS-Tools APT repository](https://github.com/fconidi/SysLinuxOS-Tools#installation-client-side), then run:
